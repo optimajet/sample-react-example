@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkflowLib", "WorkflowLib\WorkflowLib.csproj", "{2C5FC4AF-3E0E-4B28-8CCA-CDD7A6E3AC06}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkflowApi", "WorkflowApi\WorkflowApi.csproj", "{80F25F68-D536-410B-A8C9-83124357DCBD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C5FC4AF-3E0E-4B28-8CCA-CDD7A6E3AC06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C5FC4AF-3E0E-4B28-8CCA-CDD7A6E3AC06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C5FC4AF-3E0E-4B28-8CCA-CDD7A6E3AC06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C5FC4AF-3E0E-4B28-8CCA-CDD7A6E3AC06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80F25F68-D536-410B-A8C9-83124357DCBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80F25F68-D536-410B-A8C9-83124357DCBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80F25F68-D536-410B-A8C9-83124357DCBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80F25F68-D536-410B-A8C9-83124357DCBD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

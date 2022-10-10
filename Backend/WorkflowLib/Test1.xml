@@ -1,0 +1,84 @@
+<Process Name="Test1" CanBeInlined="false" Tags="" LogEnabled="false">
+    <Designer/>
+    <Actors>
+        <Actor Name="User" Rule="CheckRole" Value="User"/>
+        <Actor Name="Manager" Rule="CheckRole" Value="Manager"/>
+    </Actors>
+    <Commands>
+        <Command Name="GetWeatherForecast"/>
+        <Command Name="SendWeatherForecast"/>
+        <Command Name="ReRun"/>
+    </Commands>
+    <Activities>
+        <Activity Name="InitialActivity" State="InitialActivity" IsInitial="true" IsFinal="false" IsForSetState="true"
+                  IsAutoSchemeUpdate="true">
+            <Designer X="390" Y="170" Hidden="false"/>
+        </Activity>
+        <Activity Name="WeatherActivity" State="WeatherActivity" IsInitial="false" IsFinal="false" IsForSetState="true"
+                  IsAutoSchemeUpdate="true">
+            <Annotations>
+                <Annotation Name="__customtype"><![CDATA[WeatherActivity]]></Annotation>
+            </Annotations>
+            <Designer X="730" Y="170" Hidden="false"/>
+        </Activity>
+        <Activity Name="SendEmail" State="SendEmail" IsInitial="false" IsFinal="false" IsForSetState="true" IsAutoSchemeUpdate="true">
+            <Annotations>
+                <Annotation Name="__customtype"><![CDATA[SendEmail]]></Annotation>
+                <Annotation Name="CcList"><![CDATA[[]]]></Annotation>
+                <Annotation Name="BccList"><![CDATA[[]]]></Annotation>
+                <Annotation Name="ReplyToList"><![CDATA[[]]]></Annotation>
+                <Annotation Name="To"><![CDATA[mail@gmail.com]]></Annotation>
+                <Annotation Name="Subject"><![CDATA[Weather]]></Annotation>
+                <Annotation Name="IsHTML"><![CDATA[true]]></Annotation>
+                <Annotation Name="Body"><![CDATA[WeatherDate: @WeatherDate
+WeatherTemperature: @WeatherTemperature
+Latitude: @Weather.latitude]]></Annotation>
+            </Annotations>
+            <Designer X="1100" Y="170" Hidden="false"/>
+        </Activity>
+    </Activities>
+    <Transitions>
+        <Transition Name="InitialActivity_WeatherActivity_1" To="WeatherActivity" From="InitialActivity" Classifier="Direct"
+                    AllowConcatenationType="And" RestrictConcatenationType="And" ConditionsConcatenationType="And"
+                    DisableParentStateControl="false">
+            <Restrictions>
+                <Restriction Type="Allow" NameRef="User"/>
+            </Restrictions>
+            <Triggers>
+                <Trigger Type="Command" NameRef="GetWeatherForecast"/>
+            </Triggers>
+            <Conditions>
+                <Condition Type="Always"/>
+            </Conditions>
+            <Designer Hidden="false"/>
+        </Transition>
+        <Transition Name="WeatherActivity_SendEmail_1" To="SendEmail" From="WeatherActivity" Classifier="Direct"
+                    AllowConcatenationType="And" RestrictConcatenationType="And" ConditionsConcatenationType="And"
+                    DisableParentStateControl="false">
+            <Restrictions>
+                <Restriction Type="Allow" NameRef="Manager"/>
+            </Restrictions>
+            <Triggers>
+                <Trigger Type="Command" NameRef="SendWeatherForecast"/>
+            </Triggers>
+            <Conditions>
+                <Condition Type="Always"/>
+            </Conditions>
+            <Designer Hidden="false"/>
+        </Transition>
+        <Transition Name="SendEmail_InitialActivity_1" To="InitialActivity" From="SendEmail" Classifier="Reverse"
+                    AllowConcatenationType="And" RestrictConcatenationType="And" ConditionsConcatenationType="And"
+                    DisableParentStateControl="false">
+            <Restrictions>
+                <Restriction Type="Restrict" NameRef="User"/>
+            </Restrictions>
+            <Triggers>
+                <Trigger Type="Command" NameRef="ReRun"/>
+            </Triggers>
+            <Conditions>
+                <Condition Type="Always"/>
+            </Conditions>
+            <Designer X="816" Y="342" Hidden="false"/>
+        </Transition>
+    </Transitions>
+</Process>
