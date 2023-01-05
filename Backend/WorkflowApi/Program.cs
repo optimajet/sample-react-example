@@ -11,6 +11,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+
+var connectionString = app.Configuration.GetConnectionString("Default");
+if (connectionString is null) throw new NullReferenceException("Default connection string is not set");
+await WorkflowApi.DatabaseUpgrade.WaitForUpgrade(connectionString);
+
+WorkflowLib.WorkflowInit.ConnectionString = connectionString;
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
