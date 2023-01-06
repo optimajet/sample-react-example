@@ -10,11 +10,10 @@ namespace WorkflowLib;
 
 public static class WorkflowInit
 {
-    private const string ConnectionString = "Data Source=(local);Initial Catalog=master;User ID=sa;Password=StrongPassword#1";
-
     private static readonly Lazy<WorkflowRuntime> LazyRuntime = new(InitWorkflowRuntime);
     private static readonly Lazy<MSSQLProvider> LazyProvider = new(InitMssqlProvider);
 
+    public static string ConnectionString { get; set; } = "";
     public static WorkflowRuntime Runtime => LazyRuntime.Value;
     public static MSSQLProvider Provider => LazyProvider.Value;
 
