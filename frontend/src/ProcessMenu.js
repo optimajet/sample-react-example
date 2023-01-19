@@ -82,6 +82,7 @@ const ProcessMenu = (props) => {
             .then(result => result.json())
             .then(() => {
                 onCloseProcessParametersWindow();
+                loadCommands(props.processId,currentUser);
                 props.afterCommandExecuted?.();
             });
     }
