@@ -1,14 +1,20 @@
 import React, {useRef, useState} from "react";
-import {Container} from "rsuite";
+import {Button, Container, Modal} from "rsuite";
 import WorkflowDesigner from "@optimajet/workflow-designer-react";
 import settings from "./settings";
 import SchemeMenu from "./SchemeMenu";
 import ProcessMenu from "./ProcessMenu";
+import ProcessParameters from "./ProcessParameters";
 
 const Designer = (props) => {
     const {schemeCode, ...otherProps} = {props}
     const [code, setCode] = useState(props.schemeCode)
     const [processId, setProcessId] = useState(props.processId)
+    const [processParametersState, setProcessParametersState] = useState({
+        open: false,
+        defaultParameters: []
+    })
+    const [processParameters, setProcessParameters] = useState([])
     const designerRef = useRef()
 
     const designerConfig = {
@@ -39,8 +45,30 @@ const Designer = (props) => {
         designerRef.current.loadScheme();
     }
 
+    const onOpenProcessWindow = () => {
+        fetch(`${settings.workflowUrl}/schemeParameters/${code}`)
+            .then(result => result.json())
+            .then(data => {
+                setProcessParametersState({
+                    open: true,
+                    defaultParameters: data
+                })
+            })
+    };
+    const onCloseProcessWindow = () => setProcessParametersState({...processParametersState, open: false});
+
     const onCreateProcess = () => {
-        fetch(`${settings.workflowUrl}/createInstance/${code}`)
+        fetch(`${settings.workflowUrl}/createInstance/${code}`,
+            {
+                method: "post",
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    processParameters: processParameters
+                })
+            })
             .then(result => result.json())
             .then(data => {
                 setProcessId(data.id)
@@ -51,15 +79,33 @@ const Designer = (props) => {
                 designerRef.current.innerDesigner.load(params,
                     () => console.log('Process loaded'),
                     error => console.error(error));
+                setProcessParametersState({...processParametersState, open: false});
             });
     }
 
     return <Container style={{maxWidth: '80%', overflow: 'hidden'}}>
         {!processId &&
             <SchemeMenu {...otherProps} schemeCode={code}
-                        onNewScheme={createOrLoad} onCreateProcess={onCreateProcess}/>
+                        onNewScheme={createOrLoad} onCreateProcess={onOpenProcessWindow}/>
         }
         {!!processId && <ProcessMenu processId={processId} afterCommandExecuted={refreshDesigner}/>}
+        <Modal open={processParametersState.open} onClose={onCloseProcessWindow} overflow={true}>
+            <Modal.Header>
+                <Modal.Title>Initial process parameters</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <ProcessParameters onParametersChanged={(processParameters) => setProcessParameters(processParameters)}
+                                   defaultParameters={processParametersState.defaultParameters}/>
+            </Modal.Body>
+            <Modal.Footer>
+                <Button onClick={onCreateProcess} appearance="primary">
+                    Create Process
+                </Button>
+                <Button onClick={onCloseProcessWindow} appearance="subtle">
+                    Cancel
+                </Button>
+            </Modal.Footer>
+        </Modal>
         <WorkflowDesigner
             schemeCode={code}
             processId={processId}

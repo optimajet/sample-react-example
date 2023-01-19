@@ -6,7 +6,11 @@ builder.Services.AddControllersWithViews();
 const string rule = "MyCorsRule";
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(rule, policy => policy.AllowAnyOrigin());
+    options.AddPolicy(rule, policy =>
+    {
+        policy.AllowAnyOrigin();
+        policy.AllowAnyHeader();
+    });
 });
 
 var app = builder.Build();
