@@ -51,7 +51,7 @@ const ProcessParameters = ({onParametersChanged, defaultParameters, ...props}) =
 
     useEffect(() => {
         setAutoHeight(true);
-    },[autoHeight])
+    }, [])
 
     const onChange = (id, key, value) => {
         const nextData = Object.assign([], data);

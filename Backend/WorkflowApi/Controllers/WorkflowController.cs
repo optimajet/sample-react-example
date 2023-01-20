@@ -154,7 +154,7 @@ public class WorkflowController : ControllerBase
                         Name = p.ParameterName,
                         IsRequired = p.IsRequired,
                         Persist = p.IsPersistent,
-                        Value = p.DefaultValue as string ?? ParametersSerializer.Serialize(p.DefaultValue)
+                        Value = p.DefaultValue as string ?? (p.DefaultValue == null ? String.Empty : ParametersSerializer.Serialize(p.DefaultValue))
                     }).ToList()
                 };
             }).ToList() ?? new List<WorkflowProcessCommandDto>()
@@ -247,7 +247,7 @@ public class WorkflowController : ControllerBase
             .Where(p => p.Purpose != ParameterPurpose.System)
             .Select(p => new ProcessParameterDto()
             {
-                Name = p.Name, Value = p.InitialValue, Persist = p.Purpose == ParameterPurpose.Persistence
+                Name = p.Name, Value = p.InitialValue ?? string.Empty, Persist = p.Purpose == ParameterPurpose.Persistence
             }).ToList();
        
         return Ok(processParameterDtos);
