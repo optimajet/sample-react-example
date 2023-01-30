@@ -1,16 +1,18 @@
 using System.Xml.Linq;
+using Microsoft.AspNetCore.SignalR;
 using OptimaJet.Workflow.Core;
 using OptimaJet.Workflow.Core.Builder;
 using OptimaJet.Workflow.Core.Parser;
 using OptimaJet.Workflow.Core.Runtime;
 using OptimaJet.Workflow.DbPersistence;
 using OptimaJet.Workflow.Plugins;
+using WorkflowApi.Hubs;
 
 namespace WorkflowLib;
 
 public static class WorkflowInit
 {
-    private const string ConnectionString = "Data Source=(local);Initial Catalog=master;User ID=sa;Password=StrongPassword#1";
+    private const string ConnectionString = "Data Source=(local);Initial Catalog=pre_execution_sample;User ID=sa;Password=1";
 
     private static readonly Lazy<WorkflowRuntime> LazyRuntime = new(InitWorkflowRuntime);
     private static readonly Lazy<MSSQLProvider> LazyProvider = new(InitMssqlProvider);
@@ -53,14 +55,24 @@ public static class WorkflowInit
             .WithCustomActivities(new List<ActivityBase> {new WeatherActivity()})
             // add custom rule provider
             .WithRuleProvider(new SimpleRuleProvider())
+            .WithDesignerParameterFormatProvider(new DesignerParameterFormatProvider())
             .AsSingleServer();
 
         // events subscription
         runtime.OnProcessActivityChangedAsync += (sender, args, token) => Task.CompletedTask;
         runtime.OnProcessStatusChangedAsync += (sender, args, token) => Task.CompletedTask;
 
-        runtime.Start();
-
         return runtime;
+    }
+
+    public static async Task StartAsync(IHubContext<ProcessConsoleHub> processConsoleHub)
+    {
+        Runtime.WithActionProvider(new ActionProvider(processConsoleHub));
+        await Runtime.StartAsync();
+    }
+
+    public static void InjectServices()
+    {
+        throw new NotImplementedException();
     }
 }

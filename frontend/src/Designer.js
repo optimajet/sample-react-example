@@ -5,6 +5,7 @@ import settings from "./settings";
 import SchemeMenu from "./SchemeMenu";
 import ProcessMenu from "./ProcessMenu";
 import ProcessParameters from "./ProcessParameters";
+import ProcessConsoleWindow from "./ProcessConsoleWindow";
 
 const Designer = (props) => {
     const {schemeCode, ...otherProps} = {props}
@@ -83,7 +84,7 @@ const Designer = (props) => {
             });
     }
 
-    return <Container style={{maxWidth: '80%', overflow: 'hidden'}}>
+    return <div style={{display: "flex"}}><Container style={{maxWidth: '80%', overflow: 'hidden'}}>
         {!processId &&
             <SchemeMenu {...otherProps} schemeCode={code}
                         onNewScheme={createOrLoad} onCreateProcess={onOpenProcessWindow}/>
@@ -113,6 +114,8 @@ const Designer = (props) => {
             ref={designerRef}
         />
     </Container>
+        {processId && <ProcessConsoleWindow processId={processId}/>}
+    </div>
 }
 
 export default Designer;
