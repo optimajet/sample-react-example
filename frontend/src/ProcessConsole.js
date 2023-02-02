@@ -1,23 +1,25 @@
-import {Timeline} from 'rsuite';
-import {ProcessConsoleProvider, useProcessConsoleContext} from './ProcessConsoleContext';
+import {Container, Timeline} from 'rsuite';
+import {useProcessesConsoleContext} from "./ProcessesConsoleContext";
 import CircleIcon from '@rsuite/icons/legacy/Circle';
+import ReactMarkdown from 'react-markdown';
 
-const ProcessConsoleTimeLine = ({align = 'left'}) => {
-    const consoleLines = useProcessConsoleContext();
+const ProcessConsoleTimeline = ({processId, align = 'left'}) => {
+    const processesConsoleContext = useProcessesConsoleContext();
+    const consoleLines = processesConsoleContext[processId] ?? [];
     const timeLineItems = consoleLines.map((ti, i) => <Timeline.Item
         dot={i === 0 ? <CircleIcon style={{color: '#15b215'}}/> : <CircleIcon/>}>
         <p>{`${ti.date.toLocaleDateString()} ${ti.date.toLocaleTimeString()}`}</p>
-        <p>{ti.message.split('\n').map(s => {
-            return <><span>{s}</span> <br/></>
-        })}</p>
+        {ti.message.split('\n').map(s => {
+            return <p><ReactMarkdown>{s}</ReactMarkdown></p>
+        })}
     </Timeline.Item>)
     return <Timeline align={align}>{timeLineItems}</Timeline>
 }
 
-const ProcessConsole = ({processId, align = 'left'}) => {
-    return <ProcessConsoleProvider processId={processId}>
-        <ProcessConsoleTimeLine align={align}/>
-    </ProcessConsoleProvider>
+const ProcessConsole = ({processId}) => {
+    return <Container style={{maxHeight: 900, 'overflow-y': 'scroll'}}>
+        <b>Process console</b>
+        <ProcessConsoleTimeline processId={processId}/>
+    </Container>
 }
-
 export default ProcessConsole;

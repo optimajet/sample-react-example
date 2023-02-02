@@ -5,7 +5,7 @@ import settings from "./settings";
 import SchemeMenu from "./SchemeMenu";
 import ProcessMenu from "./ProcessMenu";
 import ProcessParameters from "./ProcessParameters";
-import ProcessConsoleWindow from "./ProcessConsoleWindow";
+import ProcessConsole from "./ProcessConsole";
 
 const Designer = (props) => {
     const {schemeCode, ...otherProps} = {props}
@@ -114,7 +114,7 @@ const Designer = (props) => {
             ref={designerRef}
         />
     </Container>
-        {processId && <ProcessConsoleWindow processId={processId}/>}
+    {processId && <ProcessConsole processId={processId}/>}
     </div>
 }
 
