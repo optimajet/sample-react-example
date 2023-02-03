@@ -25,6 +25,7 @@ services:
     environment:
       ConnectionStrings__Default: Server=database;Initial Catalog=master;User ID=sa;Password=StrongPassword#1
       ASPNETCORE_URLS: http://+:5139
+      Cors__Origins__0: http://localhost:3000
     ports:
       - 5139:5139
   database:
@@ -39,4 +40,4 @@ services:
     ports:
       - 1433:1433
     volumes:
-      - ./var/mssql-data:/var/opt/mssql
+      - ./var/mssql-data:/var/opt/mssql/data
