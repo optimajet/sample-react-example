@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using WorkflowApi;
 using WorkflowApi.Hubs;
 using WorkflowLib;
 
