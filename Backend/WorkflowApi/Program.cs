@@ -1,19 +1,30 @@
+using WorkflowApi;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 const string rule = "MyCorsRule";
+builder.Services.Configure<WorkflowApiConfiguration>(builder.Configuration);
+var apiConfiguration = builder.Configuration.Get<WorkflowApiConfiguration>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(rule, policy =>
     {
-        policy.AllowAnyOrigin();
+        policy.WithOrigins(apiConfiguration.Cors.Origins.ToArray());
         policy.AllowAnyHeader();
     });
 });
 
 var app = builder.Build();
+
+
+var connectionString = app.Configuration.GetConnectionString("Default");
+if (connectionString is null) throw new NullReferenceException("Default connection string is not set");
+await WorkflowApi.DatabaseUpgrade.WaitForUpgrade(connectionString);
+
+WorkflowLib.WorkflowInit.ConnectionString = connectionString;
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

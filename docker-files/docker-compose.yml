@@ -1,0 +1,43 @@
+name: wfe-sample
+
+services:
+  frontend:
+    depends_on:
+      - backend
+    container_name: frontend
+    hostname: frontend
+    build:
+      context: ../frontend
+      dockerfile: ../docker-files/frontend.Dockerfile
+    volumes:
+      - ../frontend/public:/app/public
+      - ../frontend/src:/app/src
+    ports:
+      - 3000:3000
+  backend:
+    depends_on:
+      - database
+    container_name: backend
+    hostname: backend
+    build:
+      context: ../Backend
+      dockerfile: ../docker-files/backend.Dockerfile
+    environment:
+      ConnectionStrings__Default: Server=database;Initial Catalog=master;User ID=sa;Password=StrongPassword#1
+      ASPNETCORE_URLS: http://+:5139
+      Cors__Origins__0: http://localhost:3000
+    ports:
+      - 5139:5139
+  database:
+    container_name: database
+    hostname: database
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      MSSQL_SA_PASSWORD: StrongPassword#1
+      ACCEPT_EULA: 1
+    cap_add:
+      - SYS_PTRACE
+    ports:
+      - 1433:1433
+    volumes:
+      - ./var/mssql-data:/var/opt/mssql/data
