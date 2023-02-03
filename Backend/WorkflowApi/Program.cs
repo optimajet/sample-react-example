@@ -1,12 +1,19 @@
+using WorkflowApi;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 const string rule = "MyCorsRule";
+builder.Services.Configure<WorkflowApiConfiguration>(builder.Configuration);
+var apiConfiguration = builder.Configuration.Get<WorkflowApiConfiguration>();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(rule, policy => policy.AllowAnyOrigin());
+    options.AddPolicy(rule, policy =>
+    {
+        policy.WithOrigins(apiConfiguration.Cors.Origins.ToArray());
+    });
 });
 
 var app = builder.Build();
