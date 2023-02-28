@@ -25,6 +25,7 @@ services:
     environment:
       ConnectionStrings__Default: Server=database;Initial Catalog=master;User ID=sa;Password=StrongPassword#1
       ASPNETCORE_URLS: http://+:5139
+      LicenseKey:
       Cors__Origins__0: http://localhost:3000
     ports:
       - 5139:5139
