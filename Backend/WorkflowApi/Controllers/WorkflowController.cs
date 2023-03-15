@@ -401,36 +401,29 @@ public class WorkflowController : ControllerBase
             return Ok(false);
         }
 
-        if (dto.ProcessParameters.Count > 0)
-        {
-            foreach (var processParameter in dto.ProcessParameters)
-            {
-                var (name, value) =
-                    GetParameterNameAndValue(processParameter.Name, processParameter.Value,
-                        processInstance.ProcessScheme);
+        var newParameters = new Dictionary<string, object>();
 
-                if (processParameter.Persist)
-                {
-                    await processInstance.SetParameterAsync(processParameter.Name, processParameter.Value,
-                        ParameterPurpose.Persistence);
-                }
-                else
-                {
-                    await processInstance.SetParameterAsync(processParameter.Name, processParameter.Value);
-                }
-            }
+
+        foreach (var processParameter in dto.ProcessParameters)
+        {
+            var (name, value) =
+                GetParameterNameAndValue(processParameter.Name, processParameter.Value,
+                    processInstance.ProcessScheme);
+            
+            newParameters.Add(name,value);
         }
 
-        var previousActivity = (await GetProcessInstanceAsync(processId))?.CurrentActivity.Name;
-        
-        await WorkflowInit.Runtime.SetActivityWithExecutionAsync(identityId, identityId,
-            new Dictionary<string, object>(), activityToSet, processInstance);
 
-        var stateWasChanged =
+        var previousActivity = processInstance.CurrentActivity.Name;
+
+        await WorkflowInit.Runtime.SetActivityWithExecutionAsync(identityId, identityId,
+            newParameters, activityToSet, processInstance);
+
+        var activityWasChanged =
             (await GetProcessInstanceAsync(processId))?.CurrentActivity.Name !=
             previousActivity;
 
-        return Ok(stateWasChanged);
+        return Ok(activityWasChanged);
     }
 
     /// <summary>
