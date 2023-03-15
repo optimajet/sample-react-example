@@ -4,6 +4,7 @@ import FlexboxGridItem from "rsuite/cjs/FlexboxGrid/FlexboxGridItem";
 import settings from "./settings";
 import Users from "./Users";
 import ProcessParameters from "./ProcessParameters";
+import ProcessMenuChangeState from "./ProcessMenuChangeState";
 
 const ProcessMenu = (props) => {
     const [commands, setCommands] = useState([]);
@@ -27,6 +28,7 @@ const ProcessMenu = (props) => {
                 setCommands(result.commands)
             })
     }
+    const [openChangeState, setOpenChangeState] = useState(false)
 
     const executeCommand = () => {
         fetch(`${settings.workflowUrl}/executeCommand/${props.processId}/${commandParametersState.name}/${currentUser}`,
@@ -104,6 +106,7 @@ const ProcessMenu = (props) => {
                 </ButtonGroup>
                 }
                 <Button onClick={onOpenProcessParametersWindow}>Change process parameters.</Button>
+                <Button onClick={()=>setOpenChangeState(true)}>Change process state.</Button>
             </FlexboxGridItem>
         </FlexboxGrid>
         <Modal open={commandParametersState.open} onClose={onCloseCommandWindow} overflow={true}>
@@ -140,6 +143,12 @@ const ProcessMenu = (props) => {
                 </Button>
             </Modal.Footer>
         </Modal>
+        <ProcessMenuChangeState open={openChangeState} onClose={(executed) => {
+            setOpenChangeState(false)
+            if (executed) {
+                props.afterCommandExecuted?.();
+            }
+        }} processId={props.processId} currentUser={currentUser}/>
     </>
 }
 
