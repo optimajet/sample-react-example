@@ -368,11 +368,13 @@ public class WorkflowController : ControllerBase
             }
         }
 
+        var previousState = (await GetProcessInstanceAsync(processId))?.CurrentState;
+
         // setting the state
         await WorkflowInit.Runtime.SetStateAsync(setStateParams);
 
-        var stateWasChanged = (await GetProcessInstanceAsync(processId))?.CurrentState ==
-                              state;
+        var stateWasChanged = (await GetProcessInstanceAsync(processId))?.CurrentState !=
+                              previousState;
         
         return Ok(stateWasChanged);
     }
@@ -419,12 +421,14 @@ public class WorkflowController : ControllerBase
             }
         }
 
+        var previousActivity = (await GetProcessInstanceAsync(processId))?.CurrentActivity.Name;
+        
         await WorkflowInit.Runtime.SetActivityWithExecutionAsync(identityId, identityId,
             new Dictionary<string, object>(), activityToSet, processInstance);
 
         var stateWasChanged =
-            (await GetProcessInstanceAsync(processId))?.CurrentActivity.Name ==
-            activity;
+            (await GetProcessInstanceAsync(processId))?.CurrentActivity.Name !=
+            previousActivity;
 
         return Ok(stateWasChanged);
     }
