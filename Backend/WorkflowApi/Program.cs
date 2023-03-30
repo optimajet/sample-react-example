@@ -1,15 +1,38 @@
+using OptimaJet.Workflow.Core.Runtime;
+using WorkflowApi;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 const string rule = "MyCorsRule";
-builder.Services.AddCors(options =>
+builder.Services.Configure<WorkflowApiConfiguration>(builder.Configuration);
+var apiConfiguration = builder.Configuration.Get<WorkflowApiConfiguration>();
+
+if (apiConfiguration?.Cors.Origins.Count > 0)
 {
-    options.AddPolicy(rule, policy => policy.AllowAnyOrigin());
-});
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy(rule, policy =>
+        {
+            policy.WithOrigins(apiConfiguration.Cors.Origins.ToArray());
+        });
+    });
+}
 
 var app = builder.Build();
+
+var connectionString = app.Configuration.GetConnectionString("Default");
+if (connectionString is null) throw new NullReferenceException("Default connection string is not set");
+await DatabaseUpgrade.WaitForUpgrade(connectionString);
+
+WorkflowLib.WorkflowInit.ConnectionString = connectionString;
+
+if (!string.IsNullOrEmpty(apiConfiguration?.LicenseKey))
+{
+    WorkflowRuntime.RegisterLicense(apiConfiguration.LicenseKey);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
