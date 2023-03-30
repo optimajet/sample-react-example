@@ -17,6 +17,7 @@ if (apiConfiguration?.Cors.Origins.Count > 0)
         options.AddPolicy(rule, policy =>
         {
             policy.WithOrigins(apiConfiguration.Cors.Origins.ToArray());
+            policy.AllowAnyHeader();
         });
     });
 }

@@ -20,7 +20,7 @@ const Users = (props) => {
 
     const data = users.map(u => {
         const roles = u.roles.join(', ');
-        return ({label: `${u.name} (${roles})`, value: u.name})
+        return ({label: `${u.name} (${roles}) (${u.division})`, value: u.name})
     });
 
     return <SelectPicker data={data} style={{width: 224}} menuStyle={{zIndex: 1000}}
