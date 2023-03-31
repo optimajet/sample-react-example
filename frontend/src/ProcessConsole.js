@@ -17,7 +17,7 @@ const ProcessConsoleTimeline = ({processId, align = 'left'}) => {
 }
 
 const ProcessConsole = ({processId}) => {
-    return <Container style={{maxHeight: 900, 'overflow-y': 'scroll'}}>
+    return <Container style={{maxHeight: 900, overflowY: 'scroll'}}>
         <b>Process console</b>
         <ProcessConsoleTimeline processId={processId}/>
     </Container>
