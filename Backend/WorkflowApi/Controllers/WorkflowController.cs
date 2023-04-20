@@ -275,6 +275,194 @@ public class WorkflowController : ControllerBase
 
         return Ok(processParameterDtos);
     }
+
+    /// <summary>
+    /// Returns list of process states that can be set
+    /// </summary>
+    /// <param name="processId">Unique process identifier</param>
+    /// <returns>List of process states</returns>
+    [HttpGet]
+    [Route("states/{processId:guid}")]
+    public async Task<IActionResult> GetProcessStates(Guid processId)
+    {
+        var processStates = await WorkflowInit.Runtime.GetAvailableStateToSetAsync(processId);
+
+        var processInstance = await GetProcessInstanceAsync(processId);
+
+        if (processInstance == null)
+        {
+            return NotFound();
+        }
+        var processStateDtos = processStates.Select(state => ProcessStateDto.FromProcessState(state, processInstance.CurrentState)).ToList();
+
+        return Ok(processStateDtos);
+    }
+
+    /// <summary>
+    /// Returns list of process activities
+    /// </summary>
+    /// <param name="processId">Unique process identifier</param>
+    /// <returns>List of process activities</returns>
+    [HttpGet]
+    [Route("activities/{processId:guid}")]
+    public async Task<IActionResult> GetProcessActivities(Guid processId)
+    {
+        var processInstance = await GetProcessInstanceAsync(processId);
+
+        if (processInstance == null)
+        {
+            return NotFound();
+        }
+
+        var processStates = await WorkflowInit.Runtime.GetAvailableStateToSetAsync(processId);
+
+        var processActivityDtos = processInstance.ProcessScheme.Activities.Select(a => new ProcessActivityDto
+        {
+            Name = a.Name,
+            State = ProcessStateDto.FromProcessState(processStates.FirstOrDefault(s => s.Name == a.State),
+                processInstance.CurrentState),
+            IsCurrent = a.Name == processInstance.CurrentActivityName
+        });
+
+        return Ok(processActivityDtos);
+    }
+
+    /// <summary>
+    /// Sets process state
+    /// </summary>
+    /// <param name="processId">Unique process identifier</param>
+    /// <param name="state">State name</param>
+    /// <param name="identityId">Set state executor identifier</param>
+    /// <param name="dto">New process parameters</param>
+    /// <returns>true if state was changed</returns>
+    [HttpPost]
+    [Route("setState/{processId:guid}/{state}/{identityId}")]
+    public async Task<IActionResult> SetState(Guid processId, string state, string identityId,
+        [FromBody] ProcessParametersDto dto)
+    {
+        var setStateParams = new SetStateParams(processId, state)
+        {
+            IdentityId = identityId
+        };
+
+        if (dto.ProcessParameters.Count > 0)
+        {
+            var processScheme = await WorkflowInit.Runtime.GetProcessSchemeAsync(processId);
+
+            foreach (var processParameter in dto.ProcessParameters)
+            {
+                var (name, value) =
+                    GetParameterNameAndValue(processParameter.Name, processParameter.Value, processScheme);
+
+                if (processParameter.Persist)
+                {
+                    setStateParams.AddPersistentParameter(name, value);
+                }
+                else
+                {
+                    setStateParams.AddTemporaryParameter(name, value);
+                }
+            }
+        }
+
+        var previousState = (await GetProcessInstanceAsync(processId))?.CurrentState;
+
+        await WorkflowInit.Runtime.SetStateAsync(setStateParams);
+
+        var stateWasChanged = (await GetProcessInstanceAsync(processId))?.CurrentState !=
+                              previousState;
+
+        return Ok(stateWasChanged);
+    }
+
+    /// <summary>
+    /// Sets process activity
+    /// </summary>
+    /// <param name="processId">Unique process identifier</param>
+    /// <param name="activity">Activity name</param>
+    /// <param name="identityId">Set activity executor identifier</param>
+    /// <param name="dto">New process parameters</param>
+    /// <returns>true if activity was changed</returns>
+    [HttpPost]
+    [Route("setActivity/{processId:guid}/{activity}/{identityId}")]
+    public async Task<IActionResult> SetActivity(Guid processId, string activity, string identityId,
+        [FromBody] ProcessParametersDto dto)
+    {
+        var processInstance = await WorkflowInit.Runtime.GetProcessInstanceAndFillProcessParametersAsync(processId);
+
+        var activityToSet = processInstance.ProcessScheme.Activities.FirstOrDefault(a => a.Name == activity);
+
+        if (activityToSet == null)
+        {
+            return Ok(false);
+        }
+
+        var newParameters = new Dictionary<string, object>();
+
+        foreach (var processParameter in dto.ProcessParameters)
+        {
+            var (name, value) =
+                GetParameterNameAndValue(processParameter.Name, processParameter.Value,
+                    processInstance.ProcessScheme);
+
+            newParameters.Add(name,value);
+        }
+
+
+        var previousActivity = processInstance.CurrentActivity.Name;
+
+        await WorkflowInit.Runtime.SetActivityWithExecutionAsync(identityId, identityId,
+            newParameters, activityToSet, processInstance);
+
+        var activityWasChanged =
+            (await GetProcessInstanceAsync(processId))?.CurrentActivity.Name !=
+            previousActivity;
+
+        return Ok(activityWasChanged);
+    }
+
+    /// <summary>
+    /// Resumes process state
+    /// </summary>
+    /// <param name="processId">Unique process identifier</param>
+    /// <param name="activity">Activity name</param>
+    /// <param name="identityId">Resume executor identifier</param>
+    /// <param name="dto">New process parameters</param>
+    /// <returns>true if process was resumed</returns>
+    [HttpPost]
+    [Route("resume/{processId:guid}/{activity}/{identityId}")]
+    public async Task<IActionResult> Resume(Guid processId, string activity, string identityId,
+        [FromBody] ProcessParametersDto dto)
+    {
+        var resumeParams = new ResumeParams(processId, activity)
+        {
+            IdentityId = identityId
+        };
+
+        if (dto.ProcessParameters.Count > 0)
+        {
+            var processScheme = await WorkflowInit.Runtime.GetProcessSchemeAsync(processId);
+
+            foreach (var processParameter in dto.ProcessParameters)
+            {
+                var (name, value) =
+                    GetParameterNameAndValue(processParameter.Name, processParameter.Value, processScheme);
+
+                if (processParameter.Persist)
+                {
+                    resumeParams.AddPersistentParameter(name, value);
+                }
+                else
+                {
+                    resumeParams.AddTemporaryParameter(name, value);
+                }
+            }
+        }
+
+        var resumeResult = await WorkflowInit.Runtime.ResumeAsync(resumeParams);
+
+        return Ok(resumeResult.WasResumed);
+    }
     
     /// <summary>
     /// Serializes process parameters in unified way
@@ -338,5 +526,19 @@ public class WorkflowController : ControllerBase
                 throw new InvalidOperationException();
             }
         }
+    }
+
+    private static async Task<ProcessInstance?> GetProcessInstanceAsync(Guid processId)
+    {
+        //it will be faster to use WorkflowInit.Runtime.Builder.GetProcessInstanceAsync call, because it doesn't load process parameters
+        var processInstance = await WorkflowInit.Runtime.Builder.GetProcessInstanceAsync(processId);
+
+        if (processInstance == null)
+        {
+            return null;
+        }
+
+        await WorkflowInit.Runtime.PersistenceProvider.FillSystemProcessParametersAsync(processInstance);
+        return processInstance;
     }
 }
