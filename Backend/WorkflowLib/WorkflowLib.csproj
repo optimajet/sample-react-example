@@ -11,4 +11,8 @@
     <PackageReference Include="WorkflowEngine.NETCore-ProviderForMSSQL" Version="7.1.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>

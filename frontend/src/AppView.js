@@ -3,6 +3,7 @@ import React, {useState} from "react";
 import Schemes from "./Schemes";
 import Processes from "./Processes";
 import Designer from "./Designer";
+import {ProcessesConsoleProvider} from "./ProcessesConsoleContext";
 
 const navigationItems = [
     {name: 'Schemes', component: Schemes},
@@ -41,7 +42,9 @@ const AppView = () => {
             </Navbar>
         </Header>
         <Content>
-            <Child {...childProps}/>
+            <ProcessesConsoleProvider>
+                <Child {...childProps}/>
+            </ProcessesConsoleProvider>
         </Content>
     </Container>
 }

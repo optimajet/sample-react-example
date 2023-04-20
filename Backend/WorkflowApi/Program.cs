@@ -1,10 +1,14 @@
 using OptimaJet.Workflow.Core.Runtime;
+using Microsoft.AspNetCore.SignalR;
 using WorkflowApi;
+using WorkflowApi.Hubs;
+using WorkflowLib;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 
 const string rule = "MyCorsRule";
 builder.Services.Configure<WorkflowApiConfiguration>(builder.Configuration);
@@ -18,6 +22,7 @@ if (apiConfiguration?.Cors.Origins.Count > 0)
         {
             policy.WithOrigins(apiConfiguration.Cors.Origins.ToArray());
             policy.AllowAnyHeader();
+            policy.AllowCredentials();
         });
     });
 }
@@ -54,5 +59,11 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<ProcessConsoleHub>("api/workflow/processConsole");
+
+var processConsoleContext = app.Services.GetService<IHubContext<ProcessConsoleHub>>();
+
+await WorkflowInit.StartAsync(processConsoleContext);
 
 app.Run();
