@@ -1,37 +1,26 @@
-using System.Xml.Linq;
-using Microsoft.AspNetCore.SignalR;
+﻿using System.Xml.Linq;
 using OptimaJet.Workflow.Core;
 using OptimaJet.Workflow.Core.Builder;
 using OptimaJet.Workflow.Core.Parser;
 using OptimaJet.Workflow.Core.Runtime;
-using OptimaJet.Workflow.DbPersistence;
 using OptimaJet.Workflow.Plugins;
-using WorkflowApi.Hubs;
 
 namespace WorkflowLib;
 
-public static class WorkflowInit
+public class WorkflowRuntimeLocator
 {
-    private static readonly Lazy<WorkflowRuntime> LazyRuntime = new(InitWorkflowRuntime);
-    private static readonly Lazy<MSSQLProvider> LazyProvider = new(InitMssqlProvider);
+    public WorkflowRuntime Runtime { get; private set; }
 
-    public static string ConnectionString { get; set; } = "";
-    public static WorkflowRuntime Runtime => LazyRuntime.Value;
-    public static MSSQLProvider Provider => LazyProvider.Value;
-
-    private static MSSQLProvider InitMssqlProvider()
-    {
-        return new MSSQLProvider(ConnectionString);
-    }
-
-    private static WorkflowRuntime InitWorkflowRuntime()
+    public WorkflowRuntimeLocator(MsSqlProviderLocator workflowProviderLocator,
+        IWorkflowActionProvider actionProvider, IWorkflowRuleProvider ruleProvider,
+        IDesignerParameterFormatProvider designerParameterFormatProvider)
     {
         //WorkflowRuntime.RegisterLicense(Secrets.LicenseKey);
 
         var builder = new WorkflowBuilder<XElement>(
-            Provider,
+            workflowProviderLocator.Provider,
             new XmlWorkflowParser(),
-            Provider
+            workflowProviderLocator.Provider
         ).WithDefaultCache();
 
         // we need BasicPlugin to send email
@@ -47,31 +36,21 @@ public static class WorkflowInit
         var runtime = new WorkflowRuntime()
             .WithPlugin(basicPlugin)
             .WithBuilder(builder)
-            .WithPersistenceProvider(Provider)
+            .WithPersistenceProvider(workflowProviderLocator.Provider)
             .EnableCodeActions()
             .SwitchAutoUpdateSchemeBeforeGetAvailableCommandsOn()
             // add custom activity
-            .WithCustomActivities(new List<ActivityBase> {new WeatherActivity()})
+            .WithCustomActivities(new List<ActivityBase> { new WeatherActivity() })
             // add custom rule provider
-            .WithRuleProvider(new SimpleRuleProvider())
-            .WithDesignerParameterFormatProvider(new DesignerParameterFormatProvider())
+            .WithRuleProvider(ruleProvider)
+            .WithActionProvider(actionProvider)
+            .WithDesignerParameterFormatProvider(designerParameterFormatProvider)
             .AsSingleServer();
 
         // events subscription
         runtime.OnProcessActivityChangedAsync += (sender, args, token) => Task.CompletedTask;
         runtime.OnProcessStatusChangedAsync += (sender, args, token) => Task.CompletedTask;
 
-        return runtime;
-    }
-
-    public static async Task StartAsync(IHubContext<ProcessConsoleHub> processConsoleHub)
-    {
-        Runtime.WithActionProvider(new ActionProvider(processConsoleHub));
-        await Runtime.StartAsync();
-    }
-
-    public static void InjectServices()
-    {
-        throw new NotImplementedException();
+        Runtime = runtime;
     }
 }
