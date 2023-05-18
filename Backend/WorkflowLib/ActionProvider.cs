@@ -19,6 +19,9 @@ public class ActionProvider : IWorkflowActionProvider
     {
         _processConsoleHub = processConsoleHub;
         _asyncActions.Add(nameof(SendMessageToProcessConsoleAsync), SendMessageToProcessConsoleAsync);
+        _asyncActions.Add(nameof(TemporaryTimeout),TemporaryTimeout);
+        _asyncActions.Add(nameof(AccessDenied),AccessDenied);
+        _asyncActions.Add(nameof(GeneralError),GeneralError);
         _syncConditions.Add(nameof(IsHighPriority),IsHighPriority);
         _syncConditions.Add(nameof(IsMediumPriority), IsMediumPriority);
     }
@@ -100,5 +103,48 @@ public class ActionProvider : IWorkflowActionProvider
     {
         dynamic report = processInstance.GetParameter<DynamicParameter>("Report");
         return report.Position != "Other" && !IsHighPriority(processInstance, runtime, actionParameter);
+    }
+
+    private async Task TemporaryTimeout(ProcessInstance processInstance, WorkflowRuntime runtime,
+        string actionParameter, CancellationToken token)
+    {
+        var attemptsCount = processInstance.IsParameterExisting("Attempts")
+            ? processInstance.GetParameter<int>("Attempts")
+            : 1;
+
+        if (attemptsCount == 5)
+        {
+            await SendMessageToProcessConsoleAsync(processInstance, runtime, "Action with temporary timeout is completing",
+                token);
+            return;
+        }
+
+        await SendMessageToProcessConsoleAsync(processInstance, runtime,
+            $"Action with temporary timeout is failing with timeout. Attempt {attemptsCount}",
+            token);
+
+        processInstance.SetParameter("Attempts", attemptsCount + 1, ParameterPurpose.Temporary);
+
+        throw new GeneralTimeoutException();
+    }
+
+    private async Task AccessDenied(ProcessInstance processInstance, WorkflowRuntime runtime,
+        string actionParameter, CancellationToken token)
+    {
+        await SendMessageToProcessConsoleAsync(processInstance, runtime,
+            "Access denied exception is throwing",
+            token);
+        
+        throw new GeneralAccessDeniedException();
+    }
+    
+    private async Task GeneralError(ProcessInstance processInstance, WorkflowRuntime runtime,
+        string actionParameter, CancellationToken token)
+    {
+        await SendMessageToProcessConsoleAsync(processInstance, runtime,
+            "General exception is throwing",
+            token);
+        
+        throw new Exception("We have a problem");
     }
 }

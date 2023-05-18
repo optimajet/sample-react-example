@@ -47,11 +47,22 @@ public class WorkflowRuntimeLocator
             .WithRuleProvider(ruleProvider)
             .WithActionProvider(actionProvider)
             .WithDesignerParameterFormatProvider(designerParameterFormatProvider)
+            .RegisterAssemblyForCodeActions(typeof(WorkflowRuntimeLocator).Assembly)
             .AsSingleServer();
 
         // events subscription
         runtime.OnProcessActivityChangedAsync += (sender, args, token) => Task.CompletedTask;
         runtime.OnProcessStatusChangedAsync += (sender, args, token) => Task.CompletedTask;
+
+        runtime.OnWorkflowError += (sender, args) =>
+        {
+            var processInstance = args.ProcessInstance;
+            var generalErrorActivity = processInstance.ProcessScheme.Activities
+                .FirstOrDefault(a => a.State == "OnGeneralError" && a.IsForSetState);
+            if (generalErrorActivity == null) return;
+            args.SuppressThrow = true;
+            runtime.SetActivityWithoutExecution(generalErrorActivity, processInstance,true);
+        };
 
         Runtime = runtime;
     }
