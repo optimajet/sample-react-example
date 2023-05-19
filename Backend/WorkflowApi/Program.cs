@@ -65,5 +65,6 @@ app.MapControllerRoute(
 
 app.MapHub<ProcessConsoleHub>("api/workflow/processConsole");
 
+await app.Services.GetService<WorkflowRuntimeLocator>().Runtime.StartAsync();
 
 app.Run();
