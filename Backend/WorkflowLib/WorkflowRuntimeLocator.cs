@@ -61,7 +61,8 @@ public class WorkflowRuntimeLocator
                 .FirstOrDefault(a => a.State == "OnGeneralError" && a.IsForSetState);
             if (generalErrorActivity == null) return;
             args.SuppressThrow = true;
-            runtime.SetActivityWithoutExecution(generalErrorActivity, processInstance,true);
+            runtime.SetActivityWithExecution(processInstance.IdentityId, processInstance.ImpersonatedIdentityId,
+                new Dictionary<string, object>(), generalErrorActivity, processInstance, true);
         };
 
         Runtime = runtime;
