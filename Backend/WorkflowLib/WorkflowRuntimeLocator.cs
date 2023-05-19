@@ -52,7 +52,24 @@ public class WorkflowRuntimeLocator
 
         // events subscription
         runtime.OnProcessActivityChangedAsync += (sender, args, token) => Task.CompletedTask;
-        runtime.OnProcessStatusChangedAsync += (sender, args, token) => Task.CompletedTask;
+        runtime.OnProcessStatusChangedAsync += async (sender, args, token) =>
+        {
+            var eventHandleAllowed = args.ProcessInstance.GetParameter<bool?>("HandleProcessStatusChanged") ?? false;
+            if (!eventHandleAllowed)
+                return;
+
+            var processConsoleActionExists = actionProvider
+                .GetActions(args.ProcessInstance.SchemeCode, NamesSearchType.All)
+                .Contains(nameof(ActionProvider.SendMessageToProcessConsoleAsync));
+            
+            if (!processConsoleActionExists)
+                return;
+
+            string consoleMessage = $@"{args.OldStatus.Name}->{args.NewStatus.Name}";
+
+            await actionProvider.ExecuteActionAsync(nameof(ActionProvider.SendMessageToProcessConsoleAsync),
+                args.ProcessInstance, runtime, consoleMessage, token);
+        };
 
         runtime.OnWorkflowError += (sender, args) =>
         {
