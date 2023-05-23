@@ -16,6 +16,7 @@
     <el-date-picker
       v-if="field.Type == 'DateTime'"
       v-model="FormData[field.Name]"
+      value-format="yyyy-MM-ddTHH:mm:ss"
       :class="validateFieldDD(FormData[field.Name]) ? 'WorkflowDesignerInputError' : ''"
       :readonly="readonly"
       type="datetime">
@@ -70,16 +71,22 @@
 </div>
 <script type="application/javascript">
   function jsonform_Init(me) {
+    me.VueConfig.methods.UpdateLanguage = function () {
+      me.VueConfig.data = Object.assign(me.VueConfig.data, {
+        labels: WorkflowDesignerConstants.EditJSONLabel,
+        labels2: WorkflowDesignerConstants.EditParametersFormlabel,
+        ButtonTextSave: WorkflowDesignerConstants.ButtonTextSave,
+        ButtonTextCancel: WorkflowDesignerConstants.ButtonTextCancel,
+      });
+    }
+
+    me.VueConfig.methods.UpdateLanguage();
     me.VueConfig.data = Object.assign(me.VueConfig.data, {
       editor_container: me.id + '_editor',
       customTitle: undefined,
       readonly: false,
       editItem: undefined,
       actionType: undefined,
-      labels: WorkflowDesignerConstants.EditJSONLabel,
-      labels2: WorkflowDesignerConstants.EditParametersFormlabel,
-      ButtonTextSave: WorkflowDesignerConstants.ButtonTextSave,
-      ButtonTextCancel: WorkflowDesignerConstants.ButtonTextCancel,
       FormData: {},
       fields: null,
       formMode: false
@@ -186,6 +193,21 @@
       }
 
       if (me.VueConfig.data.formMode) {
+
+        if (value) {
+          var serialized = WorkflowDesignerCommon.toJSON(value);
+
+          if (me.VueConfig.data.fields) {
+            me.VueConfig.data.fields.forEach(function (field) {
+              if (field.Type === 'Json') {
+                serialized[field.Name] = WorkflowDesignerCommon.toJSON(serialized[field.Name]);
+              }
+            });
+          }
+
+          value = WorkflowDesignerCommon.toString(serialized);
+        }
+
         if (me.VueConfig.data.fields.length === 1 && me.VueConfig.data.fields[0].Name === '') {
           if (me.VueConfig.data.fields[0].Type === 'Text'
             || me.VueConfig.data.fields[0].Type === 'TextArea'
@@ -394,10 +416,14 @@
         if (field.Type === 'Json') {
           if (me.editors && me.editors[field.Name]) {
             var value = me.editors[field.Name].getValue();
-            data[field.Name] = WorkflowDesignerCommon.toJSON(value);
+            data[field.Name] = value;
           } else {
-            data[field.Name] = data[field.Name] === '' ? undefined : WorkflowDesignerCommon.toJSON(data[field.Name]);
+            data[field.Name] = data[field.Name] === '' ? undefined : data[field.Name];
           }
+        }
+
+        if (field.Type === 'MultiSelect') {
+          data[field.Name] = WorkflowDesignerCommon.toString(data[field.Name]);
         }
       });
       return data;
@@ -508,7 +534,7 @@
           }
         }
       } else {
-        value = WorkflowDesignerCommon.toCompactJSON(me.editor.getValue());
+        value = me.editor.getValue();
       }
 
       if (isValid) {
