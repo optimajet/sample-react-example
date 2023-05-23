@@ -1,6 +1,7 @@
 using System.Collections.Specialized;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using OptimaJet.Workflow.Core.Runtime;
 using OptimaJet.Workflow;
 using WorkflowLib;
 
@@ -8,6 +9,13 @@ namespace WorkflowApi.Controllers;
 
 public class DesignerController : Controller
 {
+    private readonly WorkflowRuntime _runtime;
+
+    public DesignerController (WorkflowRuntimeLocator workflowRuntimeLocator)
+    {
+        _runtime = workflowRuntimeLocator.Runtime;
+    }
+    
     public async Task<IActionResult> Api()
     {
         Stream? filestream = null;
@@ -44,7 +52,7 @@ public class DesignerController : Controller
         }
 
         //Calling the Designer Api and store answer
-        var (result, hasError) = await WorkflowInit.Runtime.DesignerAPIAsync(parameters, filestream);
+        var (result, hasError) = await _runtime.DesignerAPIAsync(parameters, filestream);
 
         //If it returns a file, send the response in a special way
         if (parameters["operation"]?.ToLower() == "downloadscheme" && !hasError)
