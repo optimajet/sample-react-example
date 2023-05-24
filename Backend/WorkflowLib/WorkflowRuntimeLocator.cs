@@ -4,6 +4,7 @@ using OptimaJet.Workflow.Core;
 using OptimaJet.Workflow.Core.Builder;
 using OptimaJet.Workflow.Core.Model;
 using OptimaJet.Workflow.Core.Parser;
+using OptimaJet.Workflow.Core.Persistence;
 using OptimaJet.Workflow.Core.Runtime;
 using OptimaJet.Workflow.Plugins;
 
@@ -43,7 +44,7 @@ public class WorkflowRuntimeLocator
         {
             DisableMultipleProcessActivityChanged = configuration.Runtime.DisableMultipleProcessActivityChanged
         };
-            
+
         var runtime = new WorkflowRuntime()
             .WithPlugin(basicPlugin)
             .WithBuilder(builder)
@@ -52,17 +53,17 @@ public class WorkflowRuntimeLocator
             .EnableCodeActions()
             .SwitchAutoUpdateSchemeBeforeGetAvailableCommandsOn()
             // add custom activity
-            .WithCustomActivities(new List<ActivityBase> {new WeatherActivity()})
+            .WithCustomActivities(new List<ActivityBase> { new WeatherActivity() })
             // add custom rule provider
             .WithRuleProvider(ruleProvider)
             .WithActionProvider(actionProvider)
             .WithDesignerParameterFormatProvider(designerParameterFormatProvider)
             .RegisterAssemblyForCodeActions(typeof(WorkflowRuntimeLocator).Assembly)
             .AsSingleServer();
-        
-        bool IsProcessConsoleActionExists (string schemeCode)
+
+        bool IsProcessConsoleActionExists(string schemeCode)
         {
-           return actionProvider
+            return actionProvider
                 .GetActions(schemeCode, NamesSearchType.All)
                 .Contains(nameof(ActionProvider.SendMessageToProcessConsoleAsync));
         }
@@ -73,7 +74,7 @@ public class WorkflowRuntimeLocator
             var eventHandleAllowed = args.ProcessInstance.GetParameter<bool?>("HandleProcessActivityChanged") ?? false;
             if (!eventHandleAllowed)
                 return;
-            
+
             if (!IsProcessConsoleActionExists(args.SchemeCode))
                 return;
 
@@ -81,7 +82,7 @@ public class WorkflowRuntimeLocator
             {
                 var previousEventArgs =
                     args.ProcessInstance.GetParameter<ProcessActivityChangedEventArgs>("PreviousEventArgs");
-                
+
                 args.ProcessInstance.SetParameter("PreviousEventArgs", args);
 
                 if (previousEventArgs != null
@@ -97,13 +98,19 @@ public class WorkflowRuntimeLocator
 {args.PreviousActivity?.Name ?? "_"}->{args.CurrentActivity.Name}
 Transition: {args.ExecutedTransition?.Name ?? "_"}
 Transitional process completed: {(args.TransitionalProcessWasCompleted ? "Yes" : "No")}";
-            
+
             await actionProvider.ExecuteActionAsync(nameof(ActionProvider.SendMessageToProcessConsoleAsync),
                 args.ProcessInstance, runtime, consoleMessage, token);
         };
-        
+
         runtime.OnProcessStatusChangedAsync += async (sender, args, token) =>
         {
+            if (args.NewStatus == ProcessStatus.Running && args.OldStatus != ProcessStatus.Running)
+            {
+                await workflowProviderLocator.Provider.FillPersistedProcessParameterAsync(args.ProcessInstance,
+                    "HandleProcessStatusChanged");
+            }
+
             var eventHandleAllowed = args.ProcessInstance.GetParameter<bool?>("HandleProcessStatusChanged") ?? false;
             if (!eventHandleAllowed)
                 return;
