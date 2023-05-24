@@ -54,15 +54,16 @@ public class WorkflowRuntimeLocator
         runtime.OnProcessActivityChangedAsync += (sender, args, token) => Task.CompletedTask;
         runtime.OnProcessStatusChangedAsync += (sender, args, token) => Task.CompletedTask;
 
-        runtime.OnWorkflowError += (sender, args) =>
+        runtime.OnWorkflowErrorAsync += async (sender, args, token) =>
         {
             var processInstance = args.ProcessInstance;
             var generalErrorActivity = processInstance.ProcessScheme.Activities
                 .FirstOrDefault(a => a.State == "OnGeneralError" && a.IsForSetState);
             if (generalErrorActivity == null) return;
             args.SuppressThrow = true;
-            runtime.SetActivityWithExecution(processInstance.IdentityId, processInstance.ImpersonatedIdentityId,
-                new Dictionary<string, object>(), generalErrorActivity, processInstance, true);
+            await runtime.SetActivityWithExecutionAsync(processInstance.IdentityId,
+                processInstance.ImpersonatedIdentityId,
+                new Dictionary<string, object>(), generalErrorActivity, processInstance, true, token);
         };
 
         Runtime = runtime;
