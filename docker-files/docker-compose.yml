@@ -27,6 +27,8 @@ services:
       ASPNETCORE_URLS: http://+:5139
       LicenseKey:
       Cors__Origins__0: http://localhost:3000
+      Runtime__DisableMultipleProcessActivityChanged: false
+      Runtime__SkipLastMultipleProcessActivityChanged: false
     ports:
       - 5139:5139
   database:
